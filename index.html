@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Manhwa Tracker - Quản Lý Kế Hoạch Dịch Truyện</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b',
+                        accentPink: '#ec4899',
+                        accentHover: '#db2777'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen selection:bg-accentPink selection:text-white">
+
+    <!-- Custom Modal Thông Báo / Xác Nhận Thay Cho Alert -->
+    <div id="customModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-cardBg border border-slate-700/80 rounded-2xl p-6 max-w-sm w-full shadow-2xl transform transition-all scale-95 opacity-0" id="modalBox">
+            <div class="text-center">
+                <div id="modalIcon" class="w-12 h-12 rounded-full bg-accentPink/20 text-accentPink flex items-center justify-center mx-auto mb-4 text-xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 id="modalTitle" class="text-lg font-bold text-white mb-2">Thông báo</h3>
+                <p id="modalMessage" class="text-slate-400 text-sm mb-6">Nội dung thông báo ở đây...</p>
+                <div class="flex space-x-3 justify-center" id="modalButtons">
+                    <button id="modalBtnCancel" onclick="closeModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition">Hủy</button>
+                    <button id="modalBtnConfirm" class="flex-1 bg-accentPink hover:bg-accentHover text-white font-medium py-2.5 px-4 rounded-xl text-sm transition">Xác Nhận</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        
+        <!-- Header Section -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-cardBg/60 backdrop-blur border border-slate-800 p-6 rounded-2xl shadow-lg">
+            <div>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-pink-600/30">
+                        <i class="fa-solid fa-book-open-reader"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Solo Manhwa Tracker</h1>
+                </div>
+                <p class="text-slate-400 text-sm mt-1">Hệ thống tự quản lý quy trình dịch và xuất bản truyện tranh một mình chuyên nghiệp.</p>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <button onclick="openAddProjectModal()" class="flex-1 md:flex-none bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-pink-600/25 transition transform active:scale-95 flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-plus"></i> Thêm Bộ Truyện Mới
+                </button>
+            </div>
+        </header>
+
+        <!-- Thống kê tổng quan -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-cardBg border border-slate-800 p-4 rounded-2xl shadow">
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
+                    <span>TỔNG SỐ TRUYỆN</span>
+                    <i class="fa-solid fa-books text-pink-500"></i>
+                </div>
+                <div class="text-2xl font-bold text-white" id="statProjects">0</div>
+            </div>
+            <div class="bg-cardBg border border-slate-800 p-4 rounded-2xl shadow">
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
+                    <span>TỔNG CHAPTER</span>
+                    <i class="fa-solid fa-layer-group text-purple-500"></i>
+                </div>
+                <div class="text-2xl font-bold text-white" id="statChapters">0</div>
+            </div>
+            <div class="bg-cardBg border border-slate-800 p-4 rounded-2xl shadow">
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
+                    <span>ĐANG THỰC HIỆN</span>
+                    <i class="fa-solid fa-spinner text-amber-500"></i>
+                </div>
+                <div class="text-2xl font-bold text-white" id="statInProgress">0</div>
+            </div>
+            <div class="bg-cardBg border border-slate-800 p-4 rounded-2xl shadow">
+                <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
+                    <span>ĐÃ HOÀN THÀNH</span>
+                    <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                </div>
+                <div class="text-2xl font-bold text-white" id="statDone">0</div>
+            </div>
+        </div>
+
+        <!-- Thanh tìm kiếm & lọc -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+            <div class="relative flex-1">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" oninput="renderProjects()" placeholder="Tìm kiếm tên truyện hoặc ghi chú..." class="w-full bg-cardBg border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 transition">
+            </div>
+            <div class="flex items-center gap-2">
+                <select id="statusFilter" onchange="renderProjects()" class="bg-cardBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-300 focus:outline-none focus:border-pink-500 transition">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="Raw">1. Đã lấy Raw</option>
+                    <option value="Trans">2. Đã Dịch</option>
+                    <option value="Typeset">3. Typeset/Edit</option>
+                    <option value="Done">4. Đã Đăng ✅</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Danh sách Bộ Truyện (Grid) -->
+        <div id="projectsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Render bằng JavaScript -->
+        </div>
+
+        <!-- Trạng thái trống -->
+        <div id="emptyState" class="hidden text-center py-16 bg-cardBg/40 border border-slate-800 rounded-2xl mt-4">
+            <div class="w-16 h-16 bg-slate-800 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-box-open"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-1">Không tìm thấy bộ truyện nào</h3>
+            <p class="text-slate-400 text-sm mb-4">Hãy thêm bộ manhwa mới để bắt đầu theo dõi tiến độ công việc.</p>
+            <button onclick="openAddProjectModal()" class="bg-accentPink hover:bg-accentHover text-white px-4 py-2 rounded-xl text-sm font-medium transition">
+                + Thêm Truyện Mới
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Modal Thêm / Sửa Truyện -->
+    <div id="projectModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 flex items-center justify-center p-4 hidden">
+        <div class="bg-cardBg border border-slate-700/80 rounded-2xl p-6 max-w-md w-full shadow-2xl transform transition-all">
+            <div class="flex justify-between items-center mb-5">
+                <h3 id="projectModalTitle" class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-book text-pink-500"></i> Thêm Bộ Manhwa Mới
+                </h3>
+                <button onclick="closeProjectModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="projectForm" onsubmit="handleProjectSubmit(event)">
+                <input type="hidden" id="editingProjectId">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Tên Bộ Truyện <span class="text-pink-500">*</span></label>
+                        <input type="text" id="inputTitle" required placeholder="Ví dụ: Solo Leveling, Omniscient Reader..." class="w-full bg-darkBg border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Link Nguồn / Ghi Chú</label>
+                        <input type="text" id="inputNote" placeholder="Ví dụ: Naver Webtoon / Link raw Drive..." class="w-full bg-darkBg border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 transition">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeProjectModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition">Hủy</button>
+                    <button type="submit" class="bg-accentPink hover:bg-accentHover text-white font-medium px-5 py-2.5 rounded-xl text-sm transition shadow-lg shadow-pink-600/25">Lưu Lại</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Dữ liệu mẫu khởi tạo hoặc lấy từ localStorage
+        let projects = JSON.parse(localStorage.getItem('solo_manhwa_tracker_data')) || [
+            {
+                id: '1',
+                title: 'Toàn Trang Độc Giả (Omniscient Reader)',
+                note: 'Nguồn: Naver Webtoon - Thứ 5 hàng tuần',
+                chapters: [
+                    { number: '1', status: 'Done' },
+                    { number: '2', status: 'Done' },
+                    { number: '3', status: 'Typeset' },
+                    { number: '4', status: 'Trans' }
+                ]
+            },
+            {
+                id: '2',
+                title: 'Thợ Săn Hạng SSS Sống Sót',
+                note: 'Raw đã tải về đến chap 50',
+                chapters: [
+                    { number: '10', status: 'Raw' },
+                    { number: '11', status: 'Raw' }
+                ]
+            }
+        ];
+
+        // Lưu dữ liệu vào localStorage
+        function saveToStorage() {
+            localStorage.setItem('solo_manhwa_tracker_data', JSON.stringify(projects));
+            updateStats();
+        }
+
+        // Cập nhật thống kê
+        function updateStats() {
+            let totalProj = projects.length;
+            let totalChap = 0;
+            let inProgress = 0;
+            let done = 0;
+
+            projects.forEach(p => {
+                totalChap += p.chapters.length;
+                p.chapters.forEach(c => {
+                    if (c.status === 'Done') done++;
+                    else inProgress++;
+                });
+            });
+
+            document.getElementById('statProjects').innerText = totalProj;
+            document.getElementById('statChapters').innerText = totalChap;
+            document.getElementById('statInProgress').innerText = inProgress;
+            document.getElementById('statDone').innerText = done;
+        }
+
+        // Render danh sách bộ truyện
+        function renderProjects() {
+            const container = document.getElementById('projectsContainer');
+            const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            container.innerHTML = '';
+
+            // Lọc truyện theo từ khóa tìm kiếm
+            let filteredProjects = projects.filter(p => {
+                let matchTitle = p.title.toLowerCase().includes(searchKeyword);
+                let matchNote = p.note && p.note.toLowerCase().includes(searchKeyword);
+                return matchTitle || matchNote;
+            });
+
+            if (filteredProjects.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+
+            filteredProjects.forEach(project => {
+                // Lọc chapter nếu cần thiết
+                let displayChapters = project.chapters.map((chap, originalIndex) => ({...chap, originalIndex}));
+                if (statusFilter !== 'all') {
+                    displayChapters = displayChapters.filter(c => c.status === statusFilter);
+                }
+
+                // Nếu lọc trạng thái mà bộ truyện không có chapter nào khớp thì có thể ẩn hoặc vẫn hiện tiêu đề
+                let cardHtml = `
+                    <div class="bg-cardBg border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between hover:border-slate-700 transition">
+                        <div>
+                            <!-- Tiêu đề & Menu -->
+                            <div class="flex justify-between items-start gap-2 mb-2">
+                                <h3 class="text-lg font-bold text-white leading-snug">${escapeHtml(project.title)}</h3>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <button onclick="openEditProjectModal('${project.id}')" class="text-slate-400 hover:text-white p-1.5 transition text-xs" title="Sửa thông tin">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteProject('${project.id}')" class="text-slate-400 hover:text-red-400 p-1.5 transition text-xs" title="Xóa bộ truyện">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-400 mb-4 flex items-center gap-1.5">
+                                <i class="fa-solid fa-link text-slate-500"></i> ${escapeHtml(project.note || 'Chưa có ghi chú / link nguồn')}
+                            </p>
+
+                            <!-- Danh sách Chapter -->
+                            <div class="space-y-2 mb-4 max-h-56 overflow-y-auto pr-1">
+                `;
+
+                if (displayChapters.length === 0) {
+                    cardHtml += `<p class="text-xs text-slate-500 italic py-2 text-center">Không có chapter nào phù hợp với bộ lọc.</p>`;
+                } else {
+                    displayChapters.forEach(chap => {
+                        let statusColor = '';
+                        if (chap.status === 'Raw') statusColor = 'border-slate-700 bg-slate-900/60 text-slate-300';
+                        else if (chap.status === 'Trans') statusColor = 'border-amber-500/40 bg-amber-500/10 text-amber-300';
+                        else if (chap.status === 'Typeset') statusColor = 'border-purple-500/40 bg-purple-500/10 text-purple-300';
+                        else if (chap.status === 'Done') statusColor = 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300';
+
+                        cardHtml += `
+                            <div class="flex items-center justify-between bg-darkBg/60 p-2.5 rounded-xl border ${statusColor} text-sm transition">
+                                <span class="font-semibold px-2 py-0.5 rounded text-xs bg-slate-800/80 text-white">Chap ${escapeHtml(chap.number)}</span>
+                                <div class="flex items-center space-x-2">
+                                    <select onchange="updateChapterStatus('${project.id}', ${chap.originalIndex}, this.value)" class="bg-cardBg text-xs border border-slate-700 rounded-lg px-2 py-1.5 text-slate-200 focus:outline-none focus:border-pink-500 transition cursor-pointer font-medium">
+                                        <option value="Raw" ${chap.status === 'Raw' ? 'selected' : ''}>1. Đã lấy Raw</option>
+                                        <option value="Trans" ${chap.status === 'Trans' ? 'selected' : ''}>2. Đã Dịch</option>
+                                        <option value="Typeset" ${chap.status === 'Typeset' ? 'selected' : ''}>3. Typeset/Edit</option>
+                                        <option value="Done" ${chap.status === 'Done' ? 'selected' : ''}>4. Đã Đăng ✅</option>
+                                    </select>
+                                    <button onclick="confirmDeleteChapter('${project.id}', ${chap.originalIndex})" class="text-slate-500 hover:text-red-400 p-1 transition text-xs" title="Xóa chap">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                cardHtml += `
+                            </div>
+                        </div>
+
+                        <!-- Thêm Chapter Nhanh -->
+                        <div class="flex gap-2 pt-3 border-t border-slate-800">
+                            <input type="text" id="newChapInput_${project.id}" placeholder="Số chap (VD: 15, 15.5)" onkeypress="if(event.key === 'Enter') addChapter('${project.id}')" class="bg-darkBg border border-slate-800 text-xs rounded-xl px-3 py-2 w-full text-white placeholder-slate-600 focus:outline-none focus:border-pink-500 transition">
+                            <button onclick="addChapter('${project.id}')" class="bg-slate-800 hover:bg-slate-700 text-xs px-3.5 py-2 rounded-xl text-slate-200 font-medium whitespace-nowrap transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> Thêm Chap
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+            updateStats();
+        }
+
+        // Thêm / Sửa Project Modal Control
+        function openAddProjectModal() {
+            document.getElementById('projectModalTitle').innerHTML = '<i class="fa-solid fa-book text-pink-500"></i> Thêm Bộ Manhwa Mới';
+            document.getElementById('editingProjectId').value = '';
+            document.getElementById('inputTitle').value = '';
+            document.getElementById('inputNote').value = '';
+            document.getElementById('projectModal').classList.remove('hidden');
+        }
+
+        function openEditProjectModal(id) {
+            const project = projects.find(p => p.id === id);
+            if (!project) return;
+            document.getElementById('projectModalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square text-pink-500"></i> Chỉnh Sửa Bộ Truyện';
+            document.getElementById('editingProjectId').value = project.id;
+            document.getElementById('inputTitle').value = project.title;
+            document.getElementById('inputNote').value = project.note || '';
+            document.getElementById('projectModal').classList.remove('hidden');
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').classList.add('hidden');
+        }
+
+        function handleProjectSubmit(event) {
+            event.preventDefault();
+            const id = document.getElementById('editingProjectId').value;
+            const title = document.getElementById('inputTitle').value.trim();
+            const note = document.getElementById('inputNote').value.trim();
+
+            if (!title) return;
+
+            if (id) {
+                // Sửa
+                const project = projects.find(p => p.id === id);
+                if (project) {
+                    project.title = title;
+                    project.note = note;
+                }
+            } else {
+                // Thêm mới
+                const newProj = {
+                    id: Date.now().toString(),
+                    title: title,
+                    note: note,
+                    chapters: []
+                };
+                projects.unshift(newProj);
+            }
+
+            saveToStorage();
+            renderProjects();
+            closeProjectModal();
+        }
+
+        // Xóa Project
+        function confirmDeleteProject(id) {
+            showCustomModal(
+                'Xác nhận xóa', 
+                'Bạn có chắc chắn muốn xóa bộ truyện này và toàn bộ danh sách chapter bên trong không?', 
+                () => {
+                    projects = projects.filter(p => p.id !== id);
+                    saveToStorage();
+                    renderProjects();
+                    closeModal();
+                }
+            );
+        }
+
+        // Thêm Chapter
+        function addChapter(projectId) {
+            const input = document.getElementById(`newChapInput_${projectId}`);
+            const chapNum = input.value.trim();
+            if (!chapNum) return;
+
+            const project = projects.find(p => p.id === projectId);
+            if (project) {
+                project.chapters.push({ number: chapNum, status: 'Raw' });
+                input.value = '';
+                saveToStorage();
+                renderProjects();
+            }
+        }
+
+        // Cập nhật trạng thái Chapter
+        function updateChapterStatus(projectId, chapterIndex, newStatus) {
+            const project = projects.find(p => p.id === projectId);
+            if (project && project.chapters[chapterIndex]) {
+                project.chapters[chapterIndex].status = newStatus;
+                saveToStorage();
+                updateStats();
+            }
+        }
+
+        // Xóa Chapter
+        function confirmDeleteChapter(projectId, chapterIndex) {
+            showCustomModal(
+                'Xóa Chapter',
+                'Bạn có chắc muốn xóa chapter này khỏi tiến độ?',
+                () => {
+                    const project = projects.find(p => p.id === projectId);
+                    if (project) {
+                        project.chapters.splice(chapterIndex, 1);
+                        saveToStorage();
+                        renderProjects();
+                    }
+                    closeModal();
+                }
+            );
+        }
+
+        // Tiện ích chống XSS cơ bản
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Custom Modal hiển thị thông báo / xác nhận thay thế cho alert/confirm mặc định
+        function showCustomModal(title, message, onConfirm) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            const confirmBtn = document.getElementById('modalBtnConfirm');
+            
+            // Xóa sự kiện cũ bằng cách clone node
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+            newConfirmBtn.onclick = onConfirm;
+            document.getElementById('customModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').classList.add('hidden');
+        }
+
+        // Khởi chạy khi tải trang xong
+        window.onload = function() {
+            renderProjects();
+        }
+    </script>
+</body>
+</html>
+
+```
